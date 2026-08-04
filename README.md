@@ -81,6 +81,8 @@ inbox  triage  ready  in_progress  blocked  review  done  cancelled  archived
 workgraph serve --addr :8080 --repo /srv/workgraph/state --bootstrap-admin-token
 workgraph token create --scope runs:context,runs:event --run RUN-...
 workgraph mcp install claude
+workgraph ui --static           # read-only HTML site from indexes/*.jsonl
+workgraph import markdown TODO.md --state inbox
 ```
 
 The gateway exposes the same core mutation package as the CLI over HTTPS + remote

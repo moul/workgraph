@@ -1,6 +1,8 @@
 GO ?= go
 BIN ?= workgraph
 PKG := github.com/moul/workgraph/cmd/workgraph
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+LDFLAGS := -X main.version=$(VERSION)
 
 .PHONY: test
 test:
@@ -12,7 +14,7 @@ run:
 
 .PHONY: install
 install:
-	$(GO) install $(PKG)
+	$(GO) install -ldflags "$(LDFLAGS)" $(PKG)
 
 .PHONY: deps
 deps:
