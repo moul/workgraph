@@ -1,0 +1,15 @@
+# Workgraph local runtime state (never authoritative)
+.workgraph/index.sqlite
+.workgraph/cache/
+.workgraph/gateway.db
+
+# Build artifacts
+/workgraph
+/wg
+/dist/
+*.test
+*.out
+
+# OS / editor cruft
+.DS_Store
+*.swp
