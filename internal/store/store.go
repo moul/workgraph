@@ -241,12 +241,31 @@ func (g *Graph) Resolve(ref string) (model.Object, error) {
 			}
 			continue
 		}
-		// slug match on filename
+		// slug match on filename ("ITM-...-add-run-summary.md" -> "add-run-summary")
 		base := strings.TrimSuffix(filepath.Base(o.SourcePath()), ".md")
 		if slugPart := afterID(base); slugPart != "" && strings.ToLower(slugPart) == low {
 			if !seen[oid] {
 				matches = append(matches, o)
 				seen[oid] = true
+			}
+			continue
+		}
+		// slug match on the object title (e.g. project "Hermes" -> "hermes")
+		if id.Slugify(o.ObjectTitle()) == low {
+			if !seen[oid] {
+				matches = append(matches, o)
+				seen[oid] = true
+			}
+			continue
+		}
+		// project directory-name match (projects/hermes/PROJECT.md -> "hermes")
+		if o.ObjectType() == "project" {
+			dirName := strings.ToLower(filepath.Base(filepath.Dir(o.SourcePath())))
+			if dirName == low {
+				if !seen[oid] {
+					matches = append(matches, o)
+					seen[oid] = true
+				}
 			}
 		}
 	}
