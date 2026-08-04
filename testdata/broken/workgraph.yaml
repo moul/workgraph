@@ -1,0 +1,5 @@
+schema_version: "0.1"
+workspace_id: WKG-BROKEN
+default_branch: main
+index_policy: ignored
+mutation_policy: direct

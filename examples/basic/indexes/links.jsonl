@@ -1,0 +1,8 @@
+{"from":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6F","rel":"depends_on","to":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6J"}
+{"from":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6F","rel":"targets_repo","to":"git@github.com:moul/hermes.git"}
+{"from":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6G","rel":"depends_on","to":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6F"}
+{"from":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6G","rel":"parent_of","to":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6K"}
+{"from":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6G","rel":"targets_repo","to":"git@github.com:moul/hermes.git"}
+{"from":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6H","rel":"blocked_by","to":"DEC-01K4A2D9Q9N7H2EA2A0P5X0D02"}
+{"from":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6H","rel":"targets_repo","to":"git@github.com:moul/hermes.git"}
+{"from":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6K","rel":"derived_from","to":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6G"}

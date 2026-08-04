@@ -1,0 +1,10 @@
+schema_version: "0.1"
+workspace_id: WKG-01K4A2D9Q9N7H2EA2A0P5X0W01
+name: example-basic
+default_branch: main
+index_policy: committed
+mutation_policy: direct
+branch_prefix: workgraph/
+commit_mode: auto
+created_by: human:moul
+created_at: 2026-08-04T21:00:00+02:00

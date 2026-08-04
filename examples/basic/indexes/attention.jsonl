@@ -1,0 +1,5 @@
+{"id":"DEC-01K4A2D9Q9N7H2EA2A0P5X0D02","reason":"proposed_decision","severity":"low","summary":"Proposed decision awaiting acceptance."}
+{"id":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6F","reason":"review_assigned_to_human","severity":"high","summary":"Output exists and needs review."}
+{"id":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6G","reason":"missing_dependency","severity":"medium","summary":"Ready but dependency ITM-01K4A2D9Q9N7H2EA2A0P5X0T6F is not done."}
+{"id":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6H","reason":"blocked_by_human","severity":"high","summary":"Blocked; needs a decision or external change."}
+{"id":"ITM-01K4A2D9Q9N7H2EA2A0P5X0T6K","reason":"new_triage_item","severity":"low","summary":"New item awaiting triage."}

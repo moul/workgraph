@@ -1,0 +1,128 @@
+# Workgraph project-management ontology manifest.
+#
+# This is the deterministic contract for valid project state. `workgraph
+# validate` audits every canonical object and event against it. Agents must not
+# invent vocabulary outside this file; unknown values are validation errors.
+#
+# Hard rule: no generic relation like `related_to` in canonical state. If a
+# relationship matters, name it. If it does not, leave it as prose or a tag.
+name: workgraph
+version: "0.1"
+
+object_types:
+  - project
+  - item
+  - decision
+  - worker
+
+item_kinds:
+  - task
+  - bug
+  - question
+  - experiment
+  - review
+  - epic
+  - incident
+  - idea
+
+item_statuses:
+  - inbox
+  - triage
+  - ready
+  - in_progress
+  - blocked
+  - review
+  - done
+  - cancelled
+  - archived
+
+decision_statuses:
+  - proposed
+  - accepted
+  - superseded
+  - rejected
+
+project_statuses:
+  - active
+  - paused
+  - done
+  - archived
+
+worker_kinds:
+  - human
+  - agent
+
+health_values:
+  - unknown
+  - on_track
+  - at_risk
+  - blocked
+
+relation_types:
+  - parent_of
+  - depends_on
+  - blocks
+  - blocked_by
+  - derived_from
+  - duplicates
+  - duplicate_of
+  - supersedes
+  - superseded_by
+  - targets_repo
+  - constrained_by_decision
+
+event_actions:
+  - item.created
+  - item.updated
+  - item.status_changed
+  - item.claimed
+  - item.linked
+  - item.archived
+  - decision.created
+  - decision.status_changed
+  - project.created
+  - run.created
+  - run.started
+  - run.heartbeat
+  - run.blocked
+  - run.released
+  - run.review_requested
+  - run.reviewed
+  - run.finished
+  - run.artifact_attached
+  - run.superseded
+  - token.created
+  - token.revoked
+
+attention_reasons:
+  - blocked_by_human
+  - review_assigned_to_human
+  - lease_expired
+  - missing_dependency
+  - no_heartbeat
+  - target_behind_remote
+  - new_triage_item
+  - manual_override
+  - blocked_without_blocked_by
+  - proposed_decision
+
+capabilities:
+  - create_item
+  - update_item
+  - claim_item
+  - finish_run
+  - block_run
+  - archive_item
+  - edit_decision
+  - override_conflict
+
+token_scopes:
+  - items:read
+  - items:create
+  - runs:create
+  - runs:context
+  - runs:event
+  - runs:finish
+  - runs:block
+  - admin:tokens:create
+  - admin:tokens:revoke
