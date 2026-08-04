@@ -84,6 +84,7 @@ func commands() []command {
 		{"link", "add a typed relation between items", cmdLink},
 		{"history", "show an item's work-round history", cmdHistory},
 		{"ontology", "show or audit the ontology manifest", cmdOntology},
+		{"ui", "generate or serve a read-only UI from the indexes", cmdUI},
 		{"serve", "run the HTTP + MCP gateway", cmdServe},
 		{"token", "create, list, or revoke gateway tokens", cmdToken},
 		{"mcp", "run the stdio MCP server or install adapters", cmdMCP},
