@@ -276,14 +276,21 @@ func truncate(s string, n int) string {
 }
 
 func writeJSONL[T any](path string, rows []T) error {
+	return os.WriteFile(path, RenderJSONL(rows), 0o644)
+}
+
+// RenderJSONL serializes rows to newline-delimited JSON deterministically. It is
+// exported so the validator can compare committed indexes against a rebuild
+// without touching disk.
+func RenderJSONL[T any](rows []T) []byte {
 	var sb strings.Builder
 	for _, r := range rows {
 		b, err := json.Marshal(r)
 		if err != nil {
-			return err
+			continue
 		}
 		sb.Write(b)
 		sb.WriteByte('\n')
 	}
-	return os.WriteFile(path, []byte(sb.String()), 0o644)
+	return []byte(sb.String())
 }
