@@ -82,6 +82,7 @@ func commands() []command {
 		{"block", "block a run with a reason", cmdBlock},
 		{"heartbeat", "record progress for a long-running run", cmdHeartbeat},
 		{"link", "add a typed relation between items", cmdLink},
+		{"import", "import external items (markdown checkboxes, jsonl)", cmdImport},
 		{"history", "show an item's work-round history", cmdHistory},
 		{"ontology", "show or audit the ontology manifest", cmdOntology},
 		{"ui", "generate or serve a read-only UI from the indexes", cmdUI},
