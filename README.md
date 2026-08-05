@@ -239,7 +239,10 @@ MCP-only, or CLI-only write path.
 - [`docs/spec.md`](docs/spec.md) — the file format and protocol specification.
 - [`docs/api.md`](docs/api.md) — the HTTP gateway API.
 - [`docs/mcp.md`](docs/mcp.md) — the MCP surface.
-- [`AGENTS.md`](AGENTS.md) — how an agent uses a Workgraph repo.
+- [`AGENTS.md`](AGENTS.md) / [`CLAUDE.md`](CLAUDE.md) — the agent operating
+  contract. Claude Code reads `CLAUDE.md`; Codex reads `AGENTS.md`. `workgraph
+  init` scaffolds **both** into your control repo with the same content so any
+  agent operating it is covered.
 - [`examples/basic`](examples/basic) — a runnable example workspace.
 
 ## License

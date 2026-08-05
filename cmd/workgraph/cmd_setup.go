@@ -88,6 +88,14 @@ func cmdInit(args []string) error {
 		return err
 	}
 
+	// Agent guides. We write BOTH files because different agents read different
+	// names: Claude Code reads CLAUDE.md, Codex (and the broader convention)
+	// reads AGENTS.md. Same content in both so control-repo guidance is picked
+	// up regardless of which agent operates it. (This is the *control* repo, not
+	// a target repo — Workgraph never mutates a target repo's instruction files.)
+	_ = os.WriteFile(filepath.Join(dir, "AGENTS.md"), []byte(controlRepoAgentGuide), 0o644)
+	_ = os.WriteFile(filepath.Join(dir, "CLAUDE.md"), []byte(controlRepoAgentGuide), 0o644)
+
 	// .gitignore
 	_ = os.WriteFile(filepath.Join(dir, ".gitignore"), []byte(".workgraph/index.sqlite\n.workgraph/cache/\n.workgraph/gateway.db\n"), 0o644)
 
@@ -107,6 +115,7 @@ func cmdInit(args []string) error {
 	fmt.Printf("Initialized your Workgraph control repo at %s\n", dir)
 	fmt.Printf("  workspace_id: %s\n\n", cfg.WorkspaceID)
 	fmt.Println("This is YOUR private work-state repo, separate from the workgraph tool.")
+	fmt.Println("Scaffolded CLAUDE.md + AGENTS.md so any agent operating this repo has the contract.")
 	fmt.Println("Next steps:")
 	fmt.Printf("  cd %s\n", dir)
 	fmt.Println("  git add -A && git commit -m \"init workgraph workspace\"")
