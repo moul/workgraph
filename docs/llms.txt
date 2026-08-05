@@ -1,0 +1,46 @@
+# Workgraph
+
+> A Git-native work graph for humans and agents: durable tasks, decisions, run
+> context, status, and cross-repo agent handoff without a required daemon. The
+> source of truth is plain Markdown + YAML frontmatter + append-only JSONL
+> events in a Git repository; the CLI, indexes, MCP server, and HTTP gateway are
+> projections over those files.
+
+Three kinds of repo, never mixed:
+- `github.com/moul/workgraph` — the tool + reference (install the binary from it).
+- your **control repo** — a separate, private repo holding your durable work
+  state (`workgraph init` creates it; every mutation commits + pushes to it).
+- **target repos** — the code you actually change; Workgraph only drops a
+  task-scoped run capsule under their `.workgraph/runs/`.
+
+## Start here (agent with git + CLI access)
+
+If you are an agent that can run shell commands and git, bootstrap like this:
+
+1. Install the tool: `go install github.com/moul/workgraph/cmd/workgraph@latest`
+   (ensure `$(go env GOPATH)/bin` is on PATH; `workgraph version`).
+2. To coordinate work, `cd` into the control repo and read its `CLAUDE.md`
+   (scaffolded by `workgraph init`). Then:
+   `workgraph ready --json` to pick work, `workgraph show <id>` to inspect.
+3. To do a task, a run capsule is written into the target repo at
+   `.workgraph/runs/RUN-.../`. Read `PROMPT.md` there and follow it. Preserve the
+   target repo's own CLAUDE.md/AGENTS.md rules.
+4. Report back with the exact command in the capsule's `RUN.json`
+   (`finish_command` / `block_command`) — it already points at the control repo.
+
+Never invent vocabulary: object types, statuses, relations, and event actions
+all come from `ontologies/workgraph.yaml`. Frontmatter is current state; events
+explain how it got there. Keep `workgraph validate` green. No secrets in source.
+
+## Docs
+
+- [Getting started](https://moul.github.io/workgraph/getting-started.md): run your own private instance (tool vs control vs target repos, self-hosting).
+- [Specification](https://moul.github.io/workgraph/spec.md): file format and protocol (objects, events, indexes, capsules, validation).
+- [HTTP API](https://moul.github.io/workgraph/api.md): the gateway API and scoped-token model.
+- [MCP](https://moul.github.io/workgraph/mcp.md): the Model Context Protocol surface (local stdio + remote).
+
+## Optional
+
+- [README](https://github.com/moul/workgraph/blob/main/README.md): overview and the multi-path usage matrix (CLI/API/MCP × human/agent).
+- [AGENTS.md / CLAUDE.md](https://github.com/moul/workgraph/blob/main/AGENTS.md): the agent operating contract scaffolded into every control repo.
+- [Full text](https://moul.github.io/workgraph/llms-full.txt): README + all docs concatenated for one-shot ingestion.

@@ -235,6 +235,7 @@ MCP-only, or CLI-only write path.
 
 ## Documentation
 
+- **Agents:** open `docs/llms.txt` (hosted at `moul.github.io/workgraph/llms.txt` once Pages is on) to bootstrap.
 - [`docs/getting-started.md`](docs/getting-started.md) — **run your own private instance** (start here).
 - [`docs/spec.md`](docs/spec.md) — the file format and protocol specification.
 - [`docs/api.md`](docs/api.md) — the HTTP gateway API.

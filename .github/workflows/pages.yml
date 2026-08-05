@@ -1,0 +1,55 @@
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "README.md"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build llms-full.txt (README + all docs, concatenated)
+        run: |
+          out=docs/llms-full.txt
+          {
+            echo "# Workgraph — full documentation (generated)"
+            echo
+            echo "This file concatenates the README and every doc for one-shot LLM ingestion."
+            echo "Source of truth: https://github.com/moul/workgraph"
+            echo
+            for f in README.md docs/getting-started.md docs/spec.md docs/api.md docs/mcp.md AGENTS.md; do
+              echo; echo "================================================================"
+              echo "# FILE: $f"
+              echo "================================================================"; echo
+              cat "$f"
+            done
+          } > "$out"
+          # Serve files as-is (no Jekyll processing).
+          touch docs/.nojekyll
+          echo "generated $out ($(wc -l < "$out") lines)"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deployment
+        uses: actions/deploy-pages@v4
