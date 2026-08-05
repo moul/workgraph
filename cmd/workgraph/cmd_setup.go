@@ -104,9 +104,15 @@ func cmdInit(args []string) error {
 		}
 	}
 
-	fmt.Printf("Initialized Workgraph workspace at %s\n", dir)
-	fmt.Printf("  workspace_id: %s\n", cfg.WorkspaceID)
-	fmt.Println("Next: workgraph new project \"My Project\" --target-repo git@github.com:you/repo.git")
+	fmt.Printf("Initialized your Workgraph control repo at %s\n", dir)
+	fmt.Printf("  workspace_id: %s\n\n", cfg.WorkspaceID)
+	fmt.Println("This is YOUR private work-state repo, separate from the workgraph tool.")
+	fmt.Println("Next steps:")
+	fmt.Printf("  cd %s\n", dir)
+	fmt.Println("  git add -A && git commit -m \"init workgraph workspace\"")
+	fmt.Println("  gh repo create <you>/workgraph-state --private --source=. --remote=origin --push")
+	fmt.Println("  workgraph new project \"My Stuff\" --target-repo git@github.com:<you>/repo.git")
+	fmt.Println("\nGuide: https://github.com/moul/workgraph/blob/main/docs/getting-started.md")
 	return nil
 }
 

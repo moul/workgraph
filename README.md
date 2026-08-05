@@ -19,6 +19,24 @@ access plane:   HTTPS API + remote MCP + tokenized read page
 adapter plane:  launch capsules + optional CLAUDE/AGENTS helpers
 ```
 
+## This repo is the tool — your work lives in a *separate* repo
+
+`moul/workgraph` (this repo) is the **reference**: the Go source, the tests, the
+docs, and an example workspace. You install the binary from it — you don't put
+your tasks here.
+
+Your actual work graph lives in **your own, separate, private control repo**
+that `workgraph init` creates. Three kinds of repo, never mixed:
+
+```text
+moul/workgraph        the tool + reference      (this repo; go install)
+your control repo     your durable work state   (private; workgraph init)
+target repos          the code you change       (hermes, ...; capsules only)
+```
+
+**Want to give it a try? →  [`docs/getting-started.md`](docs/getting-started.md)**
+walks through standing up your private instance in about two minutes.
+
 ## Install
 
 Requires **Go 1.23+** and **git** on `PATH`. No database service, no Node
@@ -41,6 +59,29 @@ workgraph doctor
 
 > Private repo? Either use the local-clone install, or set
 > `GOPRIVATE=github.com/moul/*` with git SSH/token auth configured.
+
+## Quickstart: your private instance
+
+Create a **separate private repo** for your work graph, then use it. (Full guide
+with diagrams, local-only, and self-hosting: [`docs/getting-started.md`](docs/getting-started.md).)
+
+```bash
+workgraph init ~/p/workgraph-state
+cd ~/p/workgraph-state
+git add -A && git commit -m "init workgraph workspace"
+
+# create the private GitHub repo from this folder and push it
+gh repo create <you>/workgraph-state --private --source=. --remote=origin --push
+
+# from now on, every mutation auto-commits and pushes to your private repo
+workgraph new project "My Stuff" --target-repo git@github.com:<you>/hermes.git
+workgraph new task "Try workgraph" --project my-stuff --ready
+workgraph ready
+```
+
+No GitHub? `workgraph init` already runs `git init`; commit once and you're
+working locally — add a remote whenever you like (use `--no-push` on mutations
+until then).
 
 ## Usage
 
@@ -194,6 +235,7 @@ MCP-only, or CLI-only write path.
 
 ## Documentation
 
+- [`docs/getting-started.md`](docs/getting-started.md) — **run your own private instance** (start here).
 - [`docs/spec.md`](docs/spec.md) — the file format and protocol specification.
 - [`docs/api.md`](docs/api.md) — the HTTP gateway API.
 - [`docs/mcp.md`](docs/mcp.md) — the MCP surface.
