@@ -100,7 +100,7 @@ func (s *Service) CreateRun(actor, itemRef, worker string) (*core.RunResult, err
 		return nil, err
 	}
 	// No target repo path on the gateway side: the capsule is returned as data.
-	return e.CreateRun(itemRef, worker, "generic", "")
+	return e.CreateRun(itemRef, worker, "generic", "", "off")
 }
 
 // RunContext returns the same content the CLI writes to the capsule, as data.

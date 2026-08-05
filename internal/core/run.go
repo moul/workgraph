@@ -2,6 +2,8 @@ package core
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/moul/workgraph/internal/capsule"
 	"github.com/moul/workgraph/internal/eventlog"
@@ -19,7 +21,11 @@ type RunResult struct {
 // CreateRun starts a new work round against an item: it claims the item
 // (single parallel policy), appends run.created + run.started, and — when
 // targetRepo is a local path — writes a launch capsule there.
-func (e *Engine) CreateRun(itemRef, worker, agent, targetRepoPath string) (*RunResult, error) {
+//
+// redactMode is "on" | "off" | "auto" (default). "auto" redacts secret-shaped
+// values from the capsule when the target repo lives outside the control repo,
+// since that repo may be different or even public.
+func (e *Engine) CreateRun(itemRef, worker, agent, targetRepoPath, redactMode string) (*RunResult, error) {
 	if _, err := e.preflight(true); err != nil {
 		return nil, err
 	}
@@ -108,6 +114,7 @@ func (e *Engine) CreateRun(itemRef, worker, agent, targetRepoPath string) (*RunR
 			Project:   proj,
 			Decisions: decisions,
 			DependsOn: deps,
+			Redact:    e.shouldRedact(redactMode, targetRepoPath),
 		})
 		if err != nil {
 			return res, err
@@ -119,6 +126,23 @@ func (e *Engine) CreateRun(itemRef, worker, agent, targetRepoPath string) (*RunR
 		return res, err
 	}
 	return res, nil
+}
+
+// shouldRedact resolves the redact mode. "auto" (the default) redacts when the
+// target repo is not inside the control repo.
+func (e *Engine) shouldRedact(mode, targetRepoPath string) bool {
+	switch mode {
+	case "on":
+		return true
+	case "off":
+		return false
+	default: // "auto" / ""
+		rel, err := filepath.Rel(e.WS.Root, targetRepoPath)
+		if err != nil {
+			return true // can't prove it's inside → be safe
+		}
+		return rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator))
+	}
 }
 
 // Finish completes a run: it appends run.finished and moves the item to the

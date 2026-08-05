@@ -18,6 +18,7 @@ func cmdRun(args []string) error {
 	agent := fs.String("agent", "generic", "agent adapter: generic|claude|codex")
 	worker := fs.String("worker", "", "worker identity (default: --actor)")
 	print := fs.Bool("print", false, "print the launch prompt for the chosen agent")
+	redactMode := fs.String("redact", "auto", "redact secrets from the capsule: auto|on|off (auto = on when the target is outside the control repo)")
 	jsonOut := fs.Bool("json", false, "output JSON")
 	_ = parseFlags(fs, args)
 
@@ -37,7 +38,7 @@ func cmdRun(args []string) error {
 			return err
 		}
 	}
-	res, err := e.CreateRun(ref, *worker, *agent, target)
+	res, err := e.CreateRun(ref, *worker, *agent, target, *redactMode)
 	if err != nil {
 		return err
 	}

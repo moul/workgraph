@@ -47,7 +47,7 @@ func TestFullLoop(t *testing.T) {
 
 	// Create a run with a target repo dir -> capsule.
 	target := t.TempDir()
-	res, err := e.CreateRun(it.ID, "agent:claude", "claude", target)
+	res, err := e.CreateRun(it.ID, "agent:claude", "claude", target, "auto")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,10 +100,10 @@ func TestSingleParallelPolicyBlocksSecondRun(t *testing.T) {
 	e := newEngine(t)
 	proj, _ := e.CreateProject("P", "", "")
 	it, _ := e.CreateItem("T", proj.ID, "task", true)
-	if _, err := e.CreateRun(it.ID, "agent:a", "generic", ""); err != nil {
+	if _, err := e.CreateRun(it.ID, "agent:a", "generic", "", "auto"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := e.CreateRun(it.ID, "agent:b", "generic", ""); err == nil {
+	if _, err := e.CreateRun(it.ID, "agent:b", "generic", "", "auto"); err == nil {
 		t.Error("expected second run to be refused for single parallel policy")
 	}
 }

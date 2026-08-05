@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/moul/workgraph/internal/model"
+	"github.com/moul/workgraph/internal/redact"
 )
 
 // Run is the machine contract written as RUN.json.
@@ -73,6 +74,12 @@ func Generate(targetRepo string, d Data) (string, error) {
 		"RESULT.md":  renderResult(d),
 	}
 	for name, content := range files {
+		// Redaction scrubs secret-shaped values before the capsule lands in a
+		// target repo, which may be a different (even public) repository. It is
+		// the default when the target is outside the control repo.
+		if d.Redact && name != "RUN.json" {
+			content, _ = redact.Redact(content)
+		}
 		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644); err != nil {
 			return "", fmt.Errorf("capsule: write %s: %w", name, err)
 		}
@@ -156,7 +163,7 @@ func renderLinks(d Data) string {
 	return b.String()
 }
 
-func renderRules(d Data) string {
+func renderRules(Data) string {
 	return strings.TrimLeft(`
 # Rules
 
