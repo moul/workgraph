@@ -22,15 +22,16 @@ func jsonArray(v any) []byte {
 	return b
 }
 
-// Render produces the read-only dashboard HTML from a built index.
-func Render(res *index.Result) string { return render(res, false) }
+// Render produces the static, read-only dashboard HTML (no server features).
+// Used by `workgraph ui --static` and the gateway `/ui`.
+func Render(res *index.Result) string { return render(res, false, false) }
 
-// RenderWriteable produces the dashboard with inline write controls (status
-// changes) that POST to the local server. Only the local `workgraph ui --write`
-// server enables this; the gateway `/ui` stays read-only.
-func RenderWriteable(res *index.Result) string { return render(res, true) }
+// RenderServed produces the dashboard for the local `workgraph ui --serve`
+// server: it subscribes to a live SSE stream and, when writeable, adds inline
+// write controls that POST back.
+func RenderServed(res *index.Result, writeable bool) string { return render(res, writeable, true) }
 
-func render(res *index.Result, writeable bool) string {
+func render(res *index.Result, writeable, live bool) string {
 	objs := jsonArray(res.Objects)
 	att := jsonArray(res.Attention)
 	runs := jsonArray(res.Runs)
@@ -62,7 +63,7 @@ func render(res *index.Result, writeable bool) string {
 	b.WriteString(`<section id="tl-section"><h2>Timeline</h2><table id="tl"><thead><tr><th>when</th><th>actor</th><th>action</th><th>object</th><th>detail</th></tr></thead><tbody></tbody></table></section>`)
 	b.WriteString(`</main>`)
 	fmt.Fprintf(&b, `<footer>%s</footer>`, footer)
-	fmt.Fprintf(&b, `<script>const OBJS=%s,ATT=%s,RUNS=%s,HEALTH=%s,TL=%s,WRITEABLE=%t;`, objs, att, runs, health, timeline, writeable)
+	fmt.Fprintf(&b, `<script>const OBJS=%s,ATT=%s,RUNS=%s,HEALTH=%s,TL=%s,WRITEABLE=%t,LIVE=%t;`, objs, att, runs, health, timeline, writeable, live)
 	b.WriteString(uiScript)
 	b.WriteString(`</script></body></html>`)
 	return b.String()
@@ -152,4 +153,7 @@ function renderTL(){const el=document.querySelector('#tl tbody');const rs=(TL||[
 ['q','status','ty'].forEach(id=>document.getElementById(id).addEventListener('input',renderItems));
 document.querySelectorAll('#objs th[data-k]').forEach(th=>th.addEventListener('click',()=>{const k=th.dataset.k;items.sort((a,b)=>String(a[k]||'').localeCompare(String(b[k]||'')));renderItems()}));
 stats();renderAttn();renderProjects();renderItems();renderRuns();renderTL();
+if(LIVE&&window.EventSource){try{const es=new EventSource('wg/stream');let prev;
+ es.onmessage=e=>{if(prev!==undefined&&e.data!==prev){location.reload()}prev=e.data};
+ es.onerror=()=>{/* browser auto-reconnects */};}catch(e){}}
 `

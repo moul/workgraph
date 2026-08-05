@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/moul/workgraph/internal/index"
 	"github.com/moul/workgraph/internal/model"
@@ -69,11 +70,12 @@ func serveUI(ws *store.Workspace, o *globalOpts, addr string, write bool) error 
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if write {
-			fmt.Fprint(w, webui.RenderWriteable(res))
-		} else {
-			fmt.Fprint(w, webui.Render(res))
-		}
+		fmt.Fprint(w, webui.RenderServed(res, write))
+	})
+
+	// SSE stream: emit the workspace revision so browsers reload on change.
+	mux.HandleFunc("/wg/stream", func(w http.ResponseWriter, r *http.Request) {
+		streamRevision(w, r, ws.Root)
 	})
 
 	if write {
@@ -88,6 +90,55 @@ func serveUI(ws *store.Workspace, o *globalOpts, addr string, write bool) error 
 	}
 	fmt.Printf("%s dashboard on http://%s\n", mode, addr)
 	return http.ListenAndServe(addr, mux)
+}
+
+// streamRevision serves Server-Sent Events: it emits a cheap workspace
+// "revision" fingerprint every second so the browser reloads when anything
+// changes. SSE (not WebSocket) keeps this dependency-free.
+func streamRevision(w http.ResponseWriter, r *http.Request, root string) {
+	fl, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming unsupported", 500)
+		return
+	}
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	ctx := r.Context()
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	last := ""
+	for {
+		rev := revision(root)
+		if rev != last {
+			fmt.Fprintf(w, "data: %s\n\n", rev)
+			fl.Flush()
+			last = rev
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+// revision fingerprints the source planes (events + object files) by size and
+// modtime, so any mutation changes it. Cheap and good enough to trigger a
+// reload.
+func revision(root string) string {
+	var sum int64
+	for _, sub := range []string{"events", "projects", "inbox", "workers"} {
+		filepath.Walk(filepath.Join(root, sub), func(_ string, info os.FileInfo, err error) error {
+			if err != nil || info.IsDir() {
+				return nil
+			}
+			sum += info.Size() + info.ModTime().UnixNano()
+			return nil
+		})
+	}
+	return fmt.Sprintf("%d", sum)
 }
 
 func handleSetStatus(w http.ResponseWriter, r *http.Request, o *globalOpts) {

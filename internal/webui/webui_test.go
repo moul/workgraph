@@ -34,7 +34,7 @@ func TestRenderReadOnlyHasNoWriteControls(t *testing.T) {
 }
 
 func TestRenderWriteableHasControls(t *testing.T) {
-	html := RenderWriteable(&index.Result{Objects: []index.ObjectLine{{ID: "ITM-1", Type: "item", Status: "ready", Title: "T", Version: "blob:abc"}}})
+	html := RenderServed(&index.Result{Objects: []index.ObjectLine{{ID: "ITM-1", Type: "item", Status: "ready", Title: "T", Version: "blob:abc"}}}, true)
 	if !strings.Contains(html, "WRITEABLE=true") {
 		t.Errorf("writeable render should set WRITEABLE=true")
 	}
