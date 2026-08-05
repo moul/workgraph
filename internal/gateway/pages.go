@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/moul/workgraph/internal/index"
+	"github.com/moul/workgraph/internal/webui"
 )
 
 func page(w http.ResponseWriter, title, body string) {
@@ -24,6 +27,7 @@ func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
 Git-backed service; the source of truth is a Git repository of Markdown + JSONL.</p>
 <h2>Access</h2>
 <ul>
+<li><a href="/ui">Dashboard</a> (read-only)</li>
 <li><a href="/docs/api">HTTP API docs</a></li>
 <li><a href="/docs/mcp">MCP docs</a></li>
 <li><a href="/docs/subagents">Coordinator / subagent workflow</a></li>
@@ -82,6 +86,23 @@ context, launch a subagent with it, and post events back.</p>
 		html.EscapeString(raw), base, html.EscapeString(raw),
 		html.EscapeString(raw), base, base)
 	page(w, "Workgraph token", body)
+}
+
+// handleUI serves the read-only dashboard, rebuilt from the index on each
+// request so the served view stays fresh.
+func (s *Server) handleUI(w http.ResponseWriter, r *http.Request) {
+	ws, err := s.Svc.workspace()
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	res, err := index.Build(ws, false)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, webui.Render(res))
 }
 
 func (s *Server) handleDocsAPI(w http.ResponseWriter, r *http.Request) {

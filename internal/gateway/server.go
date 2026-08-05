@@ -36,6 +36,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/v0/", s.handleAPI)
 	mux.HandleFunc("/mcp", s.mcp.ServeHTTP)
 	mux.HandleFunc("/admin/tokens", s.handleAdminTokens)
+	mux.HandleFunc("/ui", s.handleUI)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintln(w, "ok") })
 	return logMiddleware(mux)
 }
