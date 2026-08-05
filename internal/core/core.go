@@ -6,6 +6,7 @@ package core
 
 import (
 	"fmt"
+	"path"
 	"strings"
 	"time"
 
@@ -37,6 +38,17 @@ type Engine struct {
 	// branch. It is stable for the whole command so nested mutations land
 	// together, never producing two active owners on the default branch.
 	conflictBranch string
+	// branchHint is the per-object work branch used under mutation_policy=branch.
+	branchHint string
+}
+
+// targetBranch returns the non-default branch commits should land on: the
+// conflict branch takes precedence over a branch-policy work branch.
+func (e *Engine) targetBranch() string {
+	if e.conflictBranch != "" {
+		return e.conflictBranch
+	}
+	return e.branchHint
 }
 
 // New returns an Engine for the workspace at ws with the given options.
@@ -104,10 +116,17 @@ func (e *Engine) commit(message string, paths ...string) (string, error) {
 	if e.Opt.NoCommit || !e.Repo.IsRepo() {
 		return "", nil
 	}
-	// When preflight decided to branch on conflict, land every commit there.
-	if e.conflictBranch != "" {
-		if berr := e.Repo.EnsureBranch(e.conflictBranch); berr != nil {
-			return "", fmt.Errorf("core: cannot switch to conflict branch %s: %w", e.conflictBranch, berr)
+	// In branch mutation mode, derive a stable per-object work branch from the
+	// first source path (once per engine, so nested commits land together).
+	if e.conflictBranch == "" && e.branchHint == "" && e.WS.Config.MutationPolicy == "branch" {
+		if b := deriveBranchName(e.WS.Config.BranchPrefix, paths); b != "" {
+			e.branchHint = b
+		}
+	}
+	// Redirect commits onto the active non-default branch, if any.
+	if tb := e.targetBranch(); tb != "" {
+		if berr := e.Repo.EnsureBranch(tb); berr != nil {
+			return "", fmt.Errorf("core: cannot switch to branch %s: %w", tb, berr)
 		}
 	}
 	// Stage source paths, events, and indexes.
@@ -126,11 +145,11 @@ func (e *Engine) commit(message string, paths ...string) (string, error) {
 	return hash, nil
 }
 
-// push sends the current work to origin — the conflict branch when one is
-// active, otherwise the default branch.
+// push sends the current work to origin — the active non-default branch when
+// one is set, otherwise the default branch.
 func (e *Engine) push() error {
-	if e.conflictBranch != "" {
-		return e.Repo.PushBranch(e.conflictBranch)
+	if tb := e.targetBranch(); tb != "" {
+		return e.Repo.PushBranch(tb)
 	}
 	return e.Repo.Push()
 }
@@ -138,6 +157,30 @@ func (e *Engine) push() error {
 // ConflictBranch returns the conflict branch this engine wrote to, or "" if it
 // stayed on the default branch. Callers surface this to the user.
 func (e *Engine) ConflictBranch() string { return e.conflictBranch }
+
+// WorkBranch returns the non-default branch this engine wrote to (conflict or
+// branch-policy), or "" if it committed on the default branch.
+func (e *Engine) WorkBranch() string { return e.targetBranch() }
+
+// deriveBranchName builds a deterministic work-branch name from the first
+// source path being committed. For an item file it yields
+// "<prefix><ITM-...-slug>"; for a PROJECT.md it uses the project directory name.
+func deriveBranchName(prefix string, paths []string) string {
+	for _, p := range paths {
+		if p == "" || p == "events" || p == "indexes" {
+			continue
+		}
+		base := strings.TrimSuffix(path.Base(p), ".md")
+		if base == "PROJECT" {
+			base = path.Base(path.Dir(p))
+		}
+		if base == "" {
+			continue
+		}
+		return prefix + base
+	}
+	return ""
+}
 
 // appendEvent writes an event with defaults filled in from the engine actor.
 func (e *Engine) appendEvent(ev eventlog.Event) error {
