@@ -227,7 +227,7 @@ func cmdHistory(args []string) error {
 // cmdItem dispatches item subcommands.
 func cmdItem(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: workgraph item <create|list|show|update|history> ...")
+		return fmt.Errorf("usage: workgraph item <create|list|show|update|history>")
 	}
 	switch args[0] {
 	case "create":

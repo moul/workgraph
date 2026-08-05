@@ -156,16 +156,6 @@ func newTab() *tabwriter.Writer {
 	return tabwriter.NewWriter(os.Stdout, 0, 2, 2, ' ', 0)
 }
 
-// firstNonFlag returns the first positional argument, or "".
-func firstArg(args []string) string {
-	for _, a := range args {
-		if !strings.HasPrefix(a, "-") {
-			return a
-		}
-	}
-	return ""
-}
-
 // requireArg returns the positional arg at index i (post-parse) or an error.
 func requireArg(fs *flag.FlagSet, i int, name string) (string, error) {
 	if fs.NArg() <= i {

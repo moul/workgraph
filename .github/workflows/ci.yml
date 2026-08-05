@@ -43,3 +43,18 @@ jobs:
           if ! git diff --quiet examples/basic/indexes; then
             echo "examples/basic indexes are stale; run 'workgraph index'"; git --no-pager diff examples/basic/indexes; exit 1
           fi
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache: true
+
+      - name: staticcheck
+        run: go run honnef.co/go/tools/cmd/staticcheck@2025.1.1 ./...
+
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...

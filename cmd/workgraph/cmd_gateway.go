@@ -64,7 +64,7 @@ func orLocal(base, addr string) string {
 
 func cmdToken(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: workgraph token <create|list|revoke> ...")
+		return fmt.Errorf("usage: workgraph token <create|list|revoke>")
 	}
 	switch args[0] {
 	case "create":
