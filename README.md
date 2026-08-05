@@ -25,6 +25,16 @@ go install github.com/moul/workgraph/cmd/workgraph@latest   # from the public mo
 # or, from a clone: make install   (stamps the version from git)
 ```
 
+**No Go? Use Docker** — mount your control repo as a volume:
+
+```bash
+docker run --rm -v "$PWD":/workspace ghcr.io/moul/workgraph ready
+docker run --rm -p 8080:8080 -v "$PWD":/workspace ghcr.io/moul/workgraph serve --addr :8080
+```
+
+(The image bundles `git`; for mutations pass your identity, e.g.
+`-e GIT_AUTHOR_NAME -e GIT_AUTHOR_EMAIL -e GIT_COMMITTER_NAME -e GIT_COMMITTER_EMAIL`.)
+
 **Create your private control repo** — a *separate* folder where your work lives
 (this repo is the tool; your tasks don't go here):
 

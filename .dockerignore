@@ -1,0 +1,11 @@
+.git
+.github
+docs
+examples
+testdata
+site
+dist
+*.test
+*.out
+/workgraph
+/wg
