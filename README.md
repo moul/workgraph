@@ -14,71 +14,26 @@ Paste this to your coding agent:
 Hey Claude, let's start using https://moul.github.io/workgraph/llms.txt
 ```
 
-<details>
-<summary><b>Advanced usages</b></summary>
-
-By default — following [`llms.txt`](https://moul.github.io/workgraph/llms.txt) —
-your agent installs the CLI, creates a **private, git-backed control repo**, and
-drives it through the CLI. That's the recommended path. Reach for these only if
-you want a specific setup.
-
-**Install the CLI** (Go 1.23+):
-
-```bash
-go install github.com/moul/workgraph/cmd/workgraph@latest   # from the public module
-# or, from a clone: make install   (stamps the version from git)
-```
-
-**No Go? Use Docker** — mount your control repo as a volume:
-
-```bash
-docker run --rm -v "$PWD":/workspace ghcr.io/moul/workgraph ready
-docker run --rm -p 8080:8080 -v "$PWD":/workspace ghcr.io/moul/workgraph serve --addr :8080
-```
-
-(The image bundles `git`; for mutations pass your identity, e.g.
-`-e GIT_AUTHOR_NAME -e GIT_AUTHOR_EMAIL -e GIT_COMMITTER_NAME -e GIT_COMMITTER_EMAIL`.)
-
-**Create your private control repo** — a *separate* folder where your work lives
-(this repo is the tool; your tasks don't go here):
-
-```bash
-workgraph init ~/p/workgraph-state
-cd ~/p/workgraph-state
-git add -A && git commit -m "init workgraph workspace"
-gh repo create <you>/workgraph-state --private --source=. --remote=origin --push
-```
-
-From then on every change auto-commits and pushes there. **No GitHub?**
-`workgraph init` already runs `git init` — commit once and work locally.
-
-**Use it directly.** One core mutation path, three surfaces — each for a human or
-an agent (copy-paste examples: [`docs/usage.md`](docs/usage.md)):
-
-- **CLI** — `workgraph ready`, `run`, `finish` (the daily loop and agent handoff)
-- **HTTP API** — scoped-token gateway for cloud agents and mobile coordinators
-- **MCP** — local stdio + remote, a compact tool surface
-
-Full walkthrough (tool vs control vs target repos, self-hosting, multi-machine):
-[`docs/getting-started.md`](docs/getting-started.md).
-
-</details>
-
-## Web interface
-
-```bash
-workgraph ui --serve      # live read-only dashboard
-```
-
-<!-- screenshot: docs/media/web.png — coming soon -->
-_A screenshot of the web interface will live here._
+It installs the CLI, creates your private git-backed control repo, and starts
+using it. Prefer to drive it yourself? The docs below cover every path.
 
 ## Docs
 
-- [How it works](docs/how-it-works.md) — the model in five minutes.
+- **[How it works](docs/how-it-works.md)** — the model in five minutes (start here).
+- **[Getting started](docs/getting-started.md)** — run your own private instance, step by step.
+- **[Usage](docs/usage.md)** — CLI / HTTP API / MCP, copy-paste for humans and agents.
+- **[Web interface](docs/web-interface.md)** — the read-only dashboard (`workgraph ui --serve`).
+- **[Spec](docs/spec.md)** — the file format and protocol.
+- **[HTTP API](docs/api.md)** · **[MCP](docs/mcp.md)** — the gateway surfaces in detail.
 - **Agents:** [`llms.txt`](https://moul.github.io/workgraph/llms.txt) — the entry point.
-- [Getting started](docs/getting-started.md) · [Usage](docs/usage.md) · [Spec](docs/spec.md) · [HTTP API](docs/api.md) · [MCP](docs/mcp.md)
 - [`AGENTS.md`](AGENTS.md) / [`CLAUDE.md`](CLAUDE.md) — the operating contract `workgraph init` scaffolds into every control repo.
+
+Jump straight to the common tasks:
+
+- [Install](docs/getting-started.md#install) · [Run with Docker, no Go](docs/getting-started.md#run-with-docker-no-go)
+- [Create your private control repo](docs/getting-started.md#create-your-private-control-repo)
+- [Serve for cloud & mobile agents](docs/getting-started.md#serve-for-cloud--mobile-agents)
+- [Adopt an existing project](docs/getting-started.md#adopt-an-existing-project)
 
 ## License
 
