@@ -83,6 +83,12 @@ func buildRuns(g *store.Graph, evs []eventlog.Event) []RunLine {
 	return out
 }
 
+// HeartbeatStale is how long an in_progress run may go without a run.* event
+// before it becomes a no_heartbeat attention item. Orchestrators are expected
+// to emit run.heartbeat periodically; manual work simply won't trip this until
+// the lease (if any) also lapses.
+const HeartbeatStale = time.Hour
+
 // buildAttention derives the human attention queue. Attention is mostly
 // derived so stale manual flags cannot rot; a manual override is honored only
 // until its expiry.
@@ -94,6 +100,19 @@ func buildAttention(g *store.Graph, evs []eventlog.Event, now time.Time) []Atten
 	known := map[string]model.Object{}
 	for _, o := range g.All() {
 		known[o.ObjectID()] = o
+	}
+
+	// Latest activity timestamp per run, for heartbeat staleness detection.
+	lastActivity := map[string]time.Time{}
+	for _, e := range evs {
+		if e.Run == "" || e.At == "" {
+			continue
+		}
+		if t, err := time.Parse(time.RFC3339, e.At); err == nil {
+			if cur, ok := lastActivity[e.Run]; !ok || t.After(cur) {
+				lastActivity[e.Run] = t
+			}
+		}
 	}
 
 	for _, it := range g.Items {
@@ -122,9 +141,18 @@ func buildAttention(g *store.Graph, evs []eventlog.Event, now time.Time) []Atten
 			}
 		}
 		// Lease expiry for active work.
+		leaseExpired := false
 		if it.Status == model.StatusInProgress && it.LeaseUntil != "" {
 			if t, err := time.Parse(time.RFC3339, it.LeaseUntil); err == nil && now.After(t) {
 				add(it.ID, "lease_expired", "high", "Active lease expired; run may be abandoned.")
+				leaseExpired = true
+			}
+		}
+		// Stale heartbeat: an active run with no recent activity. Skipped when the
+		// lease already expired (that is the louder, sufficient signal).
+		if it.Status == model.StatusInProgress && it.RunID != "" && !leaseExpired {
+			if last, ok := lastActivity[it.RunID]; ok && now.Sub(last) > HeartbeatStale {
+				add(it.ID, "no_heartbeat", "medium", "Active run has not reported progress since "+last.Format(time.RFC3339)+".")
 			}
 		}
 		// Manual override, honored until expiry.
