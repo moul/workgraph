@@ -23,8 +23,13 @@ jobs:
       - name: vet
         run: go vet ./...
 
-      - name: test
-        run: go test ./...
+      - name: configure git identity (needed by git-backed tests)
+        run: |
+          git config --global user.email ci@example.com
+          git config --global user.name ci
+
+      - name: test (race)
+        run: go test -race ./...
 
       - name: build
         run: go build -o workgraph ./cmd/workgraph

@@ -21,29 +21,131 @@ adapter plane:  launch capsules + optional CLAUDE/AGENTS helpers
 
 ## Install
 
+Requires **Go 1.23+** and **git** on `PATH`. No database service, no Node
+runtime, no Obsidian dependency, no daemon.
+
 ```bash
+# from the public module
 go install github.com/moul/workgraph/cmd/workgraph@latest
-workgraph init
+
+# or from a local clone (works offline; stamps the version from git)
+git clone https://github.com/moul/workgraph && cd workgraph && make install
+```
+
+Make sure `$(go env GOPATH)/bin` is on your `PATH`, then:
+
+```bash
+workgraph version
 workgraph doctor
 ```
 
-No local database service, no Node runtime, no Obsidian dependency, no daemon
-required for the CLI.
+> Private repo? Either use the local-clone install, or set
+> `GOPRIVATE=github.com/moul/*` with git SSH/token auth configured.
 
-## The daily loop
+## Usage
+
+Workgraph has one core mutation path exposed three ways — **CLI**, **HTTP API**,
+and **MCP** — each usable by a human or an agent. Pick the row that matches you.
+
+### 1. CLI — human (the daily loop)
 
 ```bash
-workgraph init                       # create a workspace
+workgraph init ~/work && cd ~/work
+git init && git add -A && git commit -m init      # workgraph commits mutations after this
+
 workgraph new project "Hermes" --target-repo git@github.com:moul/hermes.git
-workgraph new task "Add run summary" --project hermes
-workgraph ready                      # the daily command: next actionable items
-workgraph show ITM-01K...            # inspect one item
-workgraph run ITM-01K... --repo ../hermes --agent claude --print
-workgraph finish RUN-01K... --status review --pr 123 --summary RESULT.md
-workgraph block RUN-01K... "Need API token"
-workgraph validate                   # deterministic checks
-workgraph index                      # rebuild JSONL indexes
+workgraph new task "Add run summary" --project hermes --ready
+workgraph ready                       # the daily command: next actionable items
+workgraph attention                   # where you must intervene
+workgraph show add-run-summary        # resolve by id, slug, or fragment
+workgraph history ITM-01K...          # work-round timeline
+workgraph validate                    # deterministic checks (exit 1 on error)
 ```
+
+### 2. CLI — agent (bootstrap + report back)
+
+An agent starts a work round, reads the generated capsule in the target repo,
+does the task, and reports back — all through the same binary:
+
+```bash
+# coordinator: start a round; --print emits the exact launch prompt
+workgraph run ITM-01K... --repo ../hermes --agent claude --print --actor agent:claude
+#   -> writes ../hermes/.workgraph/runs/RUN-.../ (PROMPT.md, TASK.md, ...)
+#   -> prints: "Read .workgraph/runs/RUN-.../PROMPT.md, then do the task. Preserve this repo's CLAUDE.md rules."
+
+# agent, when done:
+workgraph finish RUN-01K... --status review --summary .workgraph/runs/RUN-.../RESULT.md --pr 123
+# or if stuck:
+workgraph block  RUN-01K... --reason "Need production API token"
+```
+
+Agents choose work from compact JSON, never by reading the whole repo:
+
+```bash
+workgraph ready --json
+workgraph list --status ready --json
+```
+
+### 3. HTTP API — human or agent
+
+Start the gateway and mint a scoped token, then use plain `curl` (human) or any
+HTTP client (agent). Worker identity comes from the token, never the request.
+
+```bash
+workgraph serve --addr :8080 --bootstrap-admin-token          # prints a one-time admin token
+workgraph token create --kind run --run RUN-01K... \
+  --scope runs:context,runs:event,runs:finish --worker agent:claude
+#   -> token created (shown once): wg_tok_...
+
+TOK=wg_tok_...
+curl -H "Authorization: Bearer $TOK" http://localhost:8080/api/v0/items
+curl -H "Authorization: Bearer $TOK" http://localhost:8080/api/v0/runs/RUN-01K.../context
+curl -H "Authorization: Bearer $TOK" -X POST \
+  -d '{"Status":"review","Summary":"Opened PR","PR":"github:moul/hermes#123"}' \
+  http://localhost:8080/api/v0/runs/RUN-01K.../finish
+```
+
+A cloud agent that can only read a URL gets scoped instructions at
+`http://localhost:8080/t/{token}`. Full reference: [`docs/api.md`](docs/api.md).
+
+### 4. MCP — agent
+
+Local stdio server (register once with your agent):
+
+```bash
+workgraph mcp install claude          # prints: claude mcp add workgraph -- <bin> mcp
+workgraph mcp install codex
+```
+
+Remote MCP over the gateway (for cloud agents), from `/setup/mcp?token=...`:
+
+```bash
+claude mcp add --transport http workgraph https://host/mcp \
+  --header "Authorization: Bearer wg_tok_..."
+```
+
+Tools (compact by default): `init · list_items · get_item · create_item ·
+create_run · get_run_context · append_run_event · finish_run · block_run ·
+search`. Full reference: [`docs/mcp.md`](docs/mcp.md).
+
+### Onboarding an existing repo
+
+```bash
+workgraph discover --repo ../hermes                       # non-invasive: what could be imported?
+workgraph import github --repo moul/hermes --issues open  # issues -> triage items (idempotent)
+workgraph import markdown ../hermes/TODO.md --state inbox
+```
+
+### Read-only web view
+
+```bash
+workgraph ui --serve                  # live read-only projection at :8081
+workgraph ui --static --out ./site    # self-contained HTML from indexes/*.jsonl
+```
+
+> Screenshots of the web interface will land here once the write UI ships
+> (tracked in [#10](https://github.com/moul/workgraph/issues/10) /
+> [#12](https://github.com/moul/workgraph/issues/12)).
 
 ## Repository contract
 
