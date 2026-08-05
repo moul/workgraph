@@ -14,15 +14,17 @@ import (
 
 func cmdImport(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: workgraph import <markdown|json> <file> [flags]")
+		return fmt.Errorf("usage: workgraph import <markdown|json|github> ... [flags]")
 	}
 	switch args[0] {
 	case "markdown":
 		return importMarkdown(args[1:])
 	case "json", "jsonl":
 		return importJSON(args[1:])
+	case "github":
+		return importGitHub(args[1:])
 	default:
-		return fmt.Errorf("unknown import source %q (want markdown|json)", args[0])
+		return fmt.Errorf("unknown import source %q (want markdown|json|github)", args[0])
 	}
 }
 

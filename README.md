@@ -82,7 +82,8 @@ workgraph serve --addr :8080 --repo /srv/workgraph/state --bootstrap-admin-token
 workgraph token create --scope runs:context,runs:event --run RUN-...
 workgraph mcp install claude
 workgraph ui --static           # read-only HTML site from indexes/*.jsonl
-workgraph import markdown TODO.md --state inbox
+workgraph import github --repo moul/hermes --issues open   # existing-project onboarding
+workgraph discover --repo ../hermes                        # non-invasive: what could be imported?
 ```
 
 The gateway exposes the same core mutation package as the CLI over HTTPS + remote
