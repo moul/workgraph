@@ -12,7 +12,7 @@ _A screenshot will live here._
 ```bash
 workgraph ui --serve                  # live read-only dashboard at :8081 (rebuilt per request)
 workgraph ui --serve --write          # writeable: status changes from the browser (binds to localhost)
-workgraph ui --static --out ./site    # self-contained index.html, no server
+workgraph ui --static --out ./site    # folder: index.html + data/*.json + assets/*.svg (for CI -> Pages)
 ```
 
 Or reach it on a running gateway at **`/ui`**:

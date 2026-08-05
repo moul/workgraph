@@ -48,10 +48,11 @@ func cmdUI(args []string) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
-	if err := os.WriteFile(filepath.Join(dir, "index.html"), []byte(webui.Render(res)), 0o644); err != nil {
+	nn, err := webui.ExportStatic(res, dir)
+	if err != nil {
 		return err
 	}
-	fmt.Printf("wrote static site to %s/index.html\n", dir)
+	fmt.Printf("wrote static site to %s (%d files: index.html, data/*.json, assets/*.svg)\n", dir, nn)
 	return nil
 }
 
