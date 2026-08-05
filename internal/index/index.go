@@ -230,15 +230,36 @@ func summarize(o model.Object) string {
 			return truncate(s, 200)
 		}
 	}
-	// Otherwise the first non-heading, non-empty line.
+	// Otherwise the first non-heading, non-empty, non-placeholder line.
 	for _, ln := range strings.Split(body, "\n") {
 		ln = strings.TrimSpace(ln)
-		if ln == "" || strings.HasPrefix(ln, "#") {
+		if ln == "" || strings.HasPrefix(ln, "#") || isPlaceholder(ln) {
 			continue
 		}
 		return truncate(ln, 200)
 	}
 	return ""
+}
+
+// isPlaceholder reports whether a line is scaffold filler rather than real
+// content: an HTML comment (<!-- … -->) or a line wholly wrapped in emphasis
+// markers (_…_ or *…*), such as the "_Describe the project._" scaffold text.
+// Such lines must not leak into an object's summary.
+func isPlaceholder(t string) bool {
+	if strings.HasPrefix(t, "<!--") {
+		return true
+	}
+	// A bare list marker with no content ("-", "*", "+") is an empty scaffold
+	// bullet, not a summary.
+	if t == "-" || t == "*" || t == "+" {
+		return true
+	}
+	if len(t) >= 2 {
+		if (t[0] == '_' && t[len(t)-1] == '_') || (t[0] == '*' && t[len(t)-1] == '*') {
+			return true
+		}
+	}
+	return false
 }
 
 func sectionParagraph(body, heading string) string {
@@ -257,6 +278,12 @@ func sectionParagraph(body, heading string) string {
 			continue
 		}
 		if strings.HasPrefix(t, "#") {
+			if len(para) > 0 {
+				break
+			}
+			continue
+		}
+		if isPlaceholder(t) {
 			if len(para) > 0 {
 				break
 			}
