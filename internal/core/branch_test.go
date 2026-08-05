@@ -21,6 +21,7 @@ func TestBranchMutationPolicy(t *testing.T) {
 
 	wsDir := filepath.Join(base, "ws")
 	git(t, base, "clone", "--quiet", origin, wsDir)
+	git(t, wsDir, "checkout", "-B", "main")
 	git(t, wsDir, "config", "user.email", "w@w.w")
 	git(t, wsDir, "config", "user.name", "w")
 

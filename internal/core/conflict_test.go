@@ -44,6 +44,7 @@ func TestBranchOnConflict(t *testing.T) {
 	// Clone A, initialize the workspace, push main.
 	aDir := filepath.Join(base, "A")
 	git(t, base, "clone", "--quiet", origin, aDir)
+	git(t, aDir, "checkout", "-B", "main")
 	git(t, aDir, "config", "user.email", "a@a.a")
 	git(t, aDir, "config", "user.name", "a")
 	writeConfig(t, aDir)
@@ -56,7 +57,7 @@ func TestBranchOnConflict(t *testing.T) {
 	git(t, base, "clone", "--quiet", origin, bDir)
 	git(t, bDir, "config", "user.email", "b@b.b")
 	git(t, bDir, "config", "user.name", "b")
-	git(t, bDir, "branch", "--set-upstream-to=origin/main", "main")
+	git(t, bDir, "checkout", "-B", "main", "origin/main")
 
 	// B makes a local commit -> diverges.
 	if err := os.WriteFile(filepath.Join(bDir, "local.txt"), []byte("b-only\n"), 0o644); err != nil {
@@ -108,6 +109,7 @@ func TestRefuseWithoutBranchFlag(t *testing.T) {
 	git(t, base, "init", "--bare", "--quiet", origin)
 	aDir := filepath.Join(base, "A")
 	git(t, base, "clone", "--quiet", origin, aDir)
+	git(t, aDir, "checkout", "-B", "main")
 	git(t, aDir, "config", "user.email", "a@a.a")
 	git(t, aDir, "config", "user.name", "a")
 	writeConfig(t, aDir)
@@ -119,7 +121,7 @@ func TestRefuseWithoutBranchFlag(t *testing.T) {
 	git(t, base, "clone", "--quiet", origin, bDir)
 	git(t, bDir, "config", "user.email", "b@b.b")
 	git(t, bDir, "config", "user.name", "b")
-	git(t, bDir, "branch", "--set-upstream-to=origin/main", "main")
+	git(t, bDir, "checkout", "-B", "main", "origin/main")
 	_ = os.WriteFile(filepath.Join(bDir, "local.txt"), []byte("x\n"), 0o644)
 	git(t, bDir, "add", "-A")
 	git(t, bDir, "commit", "--quiet", "-m", "b local")
