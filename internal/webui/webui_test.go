@@ -23,6 +23,28 @@ func TestRenderEmptyWorkspaceEmbedsArrays(t *testing.T) {
 	}
 }
 
+func TestRenderReadOnlyHasNoWriteControls(t *testing.T) {
+	html := Render(&index.Result{Objects: []index.ObjectLine{{ID: "ITM-1", Type: "item", Status: "ready", Title: "T"}}})
+	if strings.Contains(html, "wgSetStatus") && strings.Contains(html, "WRITEABLE=true") {
+		t.Errorf("read-only render must not enable write controls")
+	}
+	if !strings.Contains(html, "WRITEABLE=false") {
+		t.Errorf("read-only render should set WRITEABLE=false")
+	}
+}
+
+func TestRenderWriteableHasControls(t *testing.T) {
+	html := RenderWriteable(&index.Result{Objects: []index.ObjectLine{{ID: "ITM-1", Type: "item", Status: "ready", Title: "T", Version: "blob:abc"}}})
+	if !strings.Contains(html, "WRITEABLE=true") {
+		t.Errorf("writeable render should set WRITEABLE=true")
+	}
+	for _, want := range []string{"wgSetStatus", "wg/status", "set status"} {
+		if !strings.Contains(html, want) {
+			t.Errorf("writeable render missing %q", want)
+		}
+	}
+}
+
 func TestRenderPopulated(t *testing.T) {
 	res := &index.Result{
 		Objects:   []index.ObjectLine{{ID: "ITM-1", Type: "item", Status: "ready", Title: "T"}},

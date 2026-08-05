@@ -22,12 +22,26 @@ func jsonArray(v any) []byte {
 	return b
 }
 
-// Render produces the dashboard HTML from a built index.
-func Render(res *index.Result) string {
+// Render produces the read-only dashboard HTML from a built index.
+func Render(res *index.Result) string { return render(res, false) }
+
+// RenderWriteable produces the dashboard with inline write controls (status
+// changes) that POST to the local server. Only the local `workgraph ui --write`
+// server enables this; the gateway `/ui` stays read-only.
+func RenderWriteable(res *index.Result) string { return render(res, true) }
+
+func render(res *index.Result, writeable bool) string {
 	objs := jsonArray(res.Objects)
 	att := jsonArray(res.Attention)
 	runs := jsonArray(res.Runs)
 	health := jsonArray(res.Health)
+
+	actionsHead := ""
+	footer := "Read-only projection of <code>indexes/*.jsonl</code>. The Markdown files are the source of truth."
+	if writeable {
+		actionsHead = `<th>set status</th>`
+		footer = "Writeable local UI. Changes go through the same core mutation path as the CLI (object version checked, stale writes refused) and are committed to Git."
+	}
 
 	var b strings.Builder
 	b.WriteString(`<!doctype html><html lang="en"><head><meta charset="utf-8">`)
@@ -36,16 +50,17 @@ func Render(res *index.Result) string {
 	b.WriteString(uiCSS)
 	b.WriteString(`</style></head><body>`)
 	b.WriteString(`<header><div class="brand">◆ Workgraph</div><div class="stats" id="stats"></div></header>`)
+	b.WriteString(`<div id="toast"></div>`)
 	b.WriteString(`<main>`)
 	b.WriteString(`<section id="attn-section"><h2>Needs attention <span class="muted" id="attn-count"></span></h2><div class="cards" id="attn"></div></section>`)
 	b.WriteString(`<section><h2>Projects</h2><div class="cards" id="projects"></div></section>`)
 	b.WriteString(`<section><div class="row"><h2>Items</h2><div class="controls">`)
 	b.WriteString(`<input id="q" placeholder="filter…"><select id="status"><option value="">status: all</option></select><select id="ty"><option value="">type: all</option></select></div></div>`)
-	b.WriteString(`<table id="objs"><thead><tr><th data-k="status">status</th><th data-k="title">title</th><th data-k="priority">priority</th><th data-k="owner">owner</th><th data-k="target_repo">target</th></tr></thead><tbody></tbody></table></section>`)
+	fmt.Fprintf(&b, `<table id="objs"><thead><tr><th data-k="status">status</th><th data-k="title">title</th><th data-k="priority">priority</th><th data-k="owner">owner</th><th data-k="target_repo">target</th>%s</tr></thead><tbody></tbody></table></section>`, actionsHead)
 	b.WriteString(`<section id="runs-section"><h2>Recent runs</h2><table id="runs"><thead><tr><th>run</th><th>round</th><th>worker</th><th>status</th><th>result</th></tr></thead><tbody></tbody></table></section>`)
 	b.WriteString(`</main>`)
-	b.WriteString(`<footer>Read-only projection of <code>indexes/*.jsonl</code>. The Markdown files are the source of truth.</footer>`)
-	fmt.Fprintf(&b, `<script>const OBJS=%s,ATT=%s,RUNS=%s,HEALTH=%s;`, objs, att, runs, health)
+	fmt.Fprintf(&b, `<footer>%s</footer>`, footer)
+	fmt.Fprintf(&b, `<script>const OBJS=%s,ATT=%s,RUNS=%s,HEALTH=%s,WRITEABLE=%t;`, objs, att, runs, health, writeable)
 	b.WriteString(uiScript)
 	b.WriteString(`</script></body></html>`)
 	return b.String()
@@ -87,6 +102,10 @@ tbody tr:last-child td{border-bottom:0}
 small{color:var(--muted)}
 footer{max-width:64rem;margin:1rem auto 3rem;padding:0 1.25rem;color:var(--muted);font-size:.8rem}
 code{background:color-mix(in srgb,currentColor 12%,transparent);padding:.05rem .3rem;border-radius:4px}
+td select{font-size:.78rem;padding:.15rem .3rem}
+#toast{position:fixed;top:.7rem;left:50%;transform:translateX(-50%);z-index:20;display:flex;flex-direction:column;gap:.4rem;align-items:center}
+.msg{padding:.4rem .8rem;border-radius:8px;font-size:.82rem;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.msg.ok{background:#0a7d33;color:#fff}.msg.err{background:#c22;color:#fff}
 `
 
 const uiScript = `
@@ -107,9 +126,20 @@ function renderAttn(){document.getElementById('attn-count').textContent=ATT.leng
 const healthBy={};(HEALTH||[]).forEach(h=>healthBy[h.project]=h);
 function hpill(id){const h=healthBy[id];if(!h)return '';const s=h.suggested_health;const why=(h.reasons||[]).join('; ');return '<span class="pill hp-'+esc(s)+'" title="'+esc(why)+'">'+esc(s.replace(/_/g,' '))+'</span>'}
 function renderProjects(){document.getElementById('projects').innerHTML=projects.length?projects.map(p=>'<div class="card"><div class="t">'+esc(p.title)+' '+pill(p.status)+' '+hpill(p.id)+'</div><div class="s">'+esc(p.summary||'')+'<br>'+esc(short(p.target_repo))+'</div></div>').join(''):'<div class="s">No projects yet.</div>'}
+const STATUSES=['inbox','triage','ready','in_progress','blocked','review','done','cancelled','archived'];
+function setCtl(o){if(!WRITEABLE)return '';const opts=STATUSES.map(s=>'<option'+(s===o.status?' selected':'')+'>'+s+'</option>').join('');
+ return '<td><select data-id="'+esc(o.id)+'" data-ver="'+esc(o.version||'')+'" onchange="wgSetStatus(this)">'+opts+'</select></td>'}
 function renderItems(){const q=document.getElementById('q').value.toLowerCase(),st=document.getElementById('status').value,ty=document.getElementById('ty').value;
  const rows=items.filter(o=>(!st||o.status===st)&&(!ty||o.kind===ty)&&(!q||JSON.stringify(o).toLowerCase().includes(q)));
- document.querySelector('#objs tbody').innerHTML=rows.map(o=>'<tr><td>'+pill(o.status)+'</td><td>'+esc(o.title)+(o.summary?'<br><small>'+esc(o.summary)+'</small>':'')+'</td><td>'+esc(o.priority||'')+'</td><td>'+esc(sw(o.owner))+'</td><td>'+esc(short(o.target_repo))+'</td></tr>').join('')||'<tr><td colspan=5><small>No matching items.</small></td></tr>'}
+ const cols=WRITEABLE?6:5;
+ document.querySelector('#objs tbody').innerHTML=rows.map(o=>'<tr><td>'+pill(o.status)+'</td><td>'+esc(o.title)+(o.summary?'<br><small>'+esc(o.summary)+'</small>':'')+'</td><td>'+esc(o.priority||'')+'</td><td>'+esc(sw(o.owner))+'</td><td>'+esc(short(o.target_repo))+'</td>'+setCtl(o)+'</tr>').join('')||'<tr><td colspan='+cols+'><small>No matching items.</small></td></tr>'}
+function toast(msg,ok){const t=document.getElementById('toast');const d=document.createElement('div');d.className='msg '+(ok?'ok':'err');d.textContent=msg;t.appendChild(d);setTimeout(()=>d.remove(),3500)}
+async function wgSetStatus(sel){const id=sel.dataset.id,status=sel.value,version=sel.dataset.ver;sel.disabled=true;
+ try{const r=await fetch('wg/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status,version})});
+  const j=await r.json();
+  if(!r.ok){toast(j.error||('HTTP '+r.status),false);sel.disabled=false;return}
+  toast(id+' → '+status,true);setTimeout(()=>location.reload(),400);
+ }catch(e){toast(''+e,false);sel.disabled=false}}
 function renderRuns(){const el=document.querySelector('#runs tbody');const rs=(RUNS||[]).slice().reverse();
  if(!rs.length){document.getElementById('runs-section').style.display='none';return}
  el.innerHTML=rs.map(r=>'<tr><td><code>'+esc(r.run)+'</code></td><td>'+(r.round||'')+'</td><td>'+esc(sw(r.worker))+'</td><td>'+pill(r.status||'')+'</td><td><small>'+esc(r.summary||'')+'</small></td></tr>').join('')}

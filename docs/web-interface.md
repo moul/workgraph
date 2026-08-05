@@ -10,7 +10,8 @@ _A screenshot will live here._
 ## Run it
 
 ```bash
-workgraph ui --serve                  # live dashboard at :8081 (rebuilt per request)
+workgraph ui --serve                  # live read-only dashboard at :8081 (rebuilt per request)
+workgraph ui --serve --write          # writeable: status changes from the browser (binds to localhost)
 workgraph ui --static --out ./site    # self-contained index.html, no server
 ```
 
@@ -33,9 +34,14 @@ workgraph serve --addr :8080
 Theme-aware (light/dark), no external requests, safe to open from `file://` or
 serve from GitHub Pages.
 
-## Roadmap
+## Writeable mode
 
-Today the interface is read-only. A **writeable** local UI — claim, status
-changes, and finish/block from the browser through the same core mutation path,
-with the object version shown and stale writes refused — is tracked in
-[#10](https://github.com/moul/workgraph/issues/10).
+`workgraph ui --serve --write` adds an inline status control to each item. Changes
+go through the **same core mutation path as the CLI** (an event is written, the
+object committed to Git) and carry the object's version, so a **stale write is
+refused with a 409** rather than silently overwriting concurrent edits. Because
+it mutates the repo, write mode **binds to localhost** and honors the usual
+`--actor` / `--no-push` / `--offline` flags.
+
+Next: richer actions (finish/block a run, edit fields) and live updates over a
+WebSocket ([#18](https://github.com/moul/workgraph/issues/18)).
