@@ -8,7 +8,11 @@ durable work state**.
 
 ## Getting started
 
-> Hey Claude, let's start using https://moul.github.io/workgraph/llms.txt
+Paste this to your coding agent:
+
+```text
+Hey Claude, let's start using https://moul.github.io/workgraph/llms.txt
+```
 
 <details>
 <summary><b>Advanced usages</b></summary>
