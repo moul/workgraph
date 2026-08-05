@@ -24,7 +24,7 @@ func (e *Engine) CreateProject(title, targetRepo, targetRef string) (*model.Proj
 		TargetRef:  targetRef,
 		Health:     "unknown",
 	}
-	p.SetBody(fmt.Sprintf("# %s\n\n## Purpose\n\n_Describe the project._\n\n## Current outcome\n\n## Success criteria\n\n- \n\n## Constraints\n\n- \n", title))
+	p.SetBody(fmt.Sprintf("# %s\n\n## Purpose\n\n<!-- What outcome is this project driving toward? -->\n\n## Current outcome\n\n## Success criteria\n\n- \n\n## Constraints\n\n- \n", title))
 	path, err := e.WS.Save(p)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (e *Engine) CreateItem(title, projectRef, kind string, ready bool) (*model.
 		Kind:    kind,
 		Project: projectID,
 	}
-	it.SetBody(fmt.Sprintf("# %s\n\n## Goal\n\n_What outcome does this produce?_\n\n## Context\n\n## Acceptance criteria\n\n- \n\n## Constraints\n\n", title))
+	it.SetBody(fmt.Sprintf("# %s\n\n## Goal\n\n<!-- What outcome does this produce? -->\n\n## Context\n\n## Acceptance criteria\n\n- \n\n## Constraints\n\n", title))
 	path, err := e.WS.Save(it)
 	if err != nil {
 		return nil, err
