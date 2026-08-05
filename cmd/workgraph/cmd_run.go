@@ -29,6 +29,7 @@ func cmdRun(args []string) error {
 	if err != nil {
 		return err
 	}
+	defer noteConflict(e)
 	target := ""
 	if *repo != "" {
 		target, err = filepath.Abs(*repo)
@@ -96,6 +97,7 @@ func cmdFinish(args []string) error {
 	if err != nil {
 		return err
 	}
+	defer noteConflict(e)
 	it, err := e.Finish(runID, *status, summary, *pr)
 	if err != nil {
 		return err
@@ -126,6 +128,7 @@ func cmdBlock(args []string) error {
 	if err != nil {
 		return err
 	}
+	defer noteConflict(e)
 	it, err := e.Block(runID, reason)
 	if err != nil {
 		return err
@@ -153,6 +156,7 @@ func cmdHeartbeat(args []string) error {
 	if err != nil {
 		return err
 	}
+	defer noteConflict(e)
 	if err := e.Heartbeat(runID, m); err != nil {
 		return err
 	}
@@ -173,6 +177,7 @@ func cmdLink(args []string) error {
 	if err != nil {
 		return err
 	}
+	defer noteConflict(e)
 	it, err := e.Link(fs.Arg(0), fs.Arg(1), fs.Arg(2))
 	if err != nil {
 		return err
@@ -201,6 +206,7 @@ func cmdItemUpdate(args []string) error {
 	if err != nil {
 		return err
 	}
+	defer noteConflict(e)
 	if *status != "" && !e.WS.Ontology.Has("item_status", *status) {
 		return fmt.Errorf("unknown status %q", *status)
 	}

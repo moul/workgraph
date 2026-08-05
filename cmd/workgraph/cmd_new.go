@@ -50,6 +50,7 @@ func newProject(args []string) error {
 	if err != nil {
 		return err
 	}
+	defer noteConflict(e)
 	p, err := e.CreateProject(title, *targetRepo, *targetRef)
 	if err != nil {
 		return err
@@ -79,6 +80,7 @@ func newTask(args []string) error {
 	if err != nil {
 		return err
 	}
+	defer noteConflict(e)
 	it, err := e.CreateItem(title, *project, *kind, *ready)
 	if err != nil {
 		return err
@@ -107,6 +109,7 @@ func newDecision(args []string) error {
 	if err != nil {
 		return err
 	}
+	defer noteConflict(e)
 	d, err := e.CreateDecision(title, *project, *status)
 	if err != nil {
 		return err

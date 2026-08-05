@@ -6,10 +6,12 @@ package core
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/moul/workgraph/internal/eventlog"
 	"github.com/moul/workgraph/internal/gitutil"
+	"github.com/moul/workgraph/internal/id"
 	"github.com/moul/workgraph/internal/index"
 	"github.com/moul/workgraph/internal/model"
 	"github.com/moul/workgraph/internal/store"
@@ -29,6 +31,12 @@ type Engine struct {
 	WS   *store.Workspace
 	Repo *gitutil.Repo
 	Opt  Options
+
+	// conflictBranch, once set by preflight, redirects every subsequent commit
+	// in this engine's lifetime onto one conflict branch instead of the default
+	// branch. It is stable for the whole command so nested mutations land
+	// together, never producing two active owners on the default branch.
+	conflictBranch string
 }
 
 // New returns an Engine for the workspace at ws with the given options.
@@ -64,11 +72,23 @@ func (e *Engine) preflight(mutating bool) (warn string, err error) {
 	// Mutating: try to fast-forward.
 	if ffErr := e.Repo.FastForward(); ffErr != nil {
 		if e.Opt.BranchOnConflict {
-			return "diverged; writing to a conflict branch", nil
+			if e.conflictBranch == "" {
+				e.conflictBranch = e.WS.Config.BranchPrefix + "conflict/" + shortConflictID()
+			}
+			return "diverged; writing to conflict branch " + e.conflictBranch, nil
 		}
 		return "", fmt.Errorf("control branch is %d commit(s) behind and cannot fast-forward; re-run with --branch-on-conflict or reconcile manually", behind)
 	}
 	return "", nil
+}
+
+// shortConflictID returns a short, sortable id fragment for a conflict branch.
+func shortConflictID() string {
+	u := id.ULID(id.NewEvent())
+	if len(u) >= 12 {
+		return strings.ToLower(u[:12])
+	}
+	return strings.ToLower(u)
 }
 
 // commit rebuilds committed indexes, then commits (and pushes) the given source
@@ -84,6 +104,12 @@ func (e *Engine) commit(message string, paths ...string) (string, error) {
 	if e.Opt.NoCommit || !e.Repo.IsRepo() {
 		return "", nil
 	}
+	// When preflight decided to branch on conflict, land every commit there.
+	if e.conflictBranch != "" {
+		if berr := e.Repo.EnsureBranch(e.conflictBranch); berr != nil {
+			return "", fmt.Errorf("core: cannot switch to conflict branch %s: %w", e.conflictBranch, berr)
+		}
+	}
 	// Stage source paths, events, and indexes.
 	all := append([]string{}, paths...)
 	all = append(all, "events", "indexes")
@@ -92,13 +118,26 @@ func (e *Engine) commit(message string, paths ...string) (string, error) {
 		return "", err
 	}
 	if !e.Opt.NoPush && !e.Opt.Offline {
-		if perr := e.Repo.Push(); perr != nil {
+		if perr := e.push(); perr != nil {
 			// A push failure is surfaced but does not undo the local commit.
 			return hash, fmt.Errorf("committed %s but push failed: %w", hash[:min(7, len(hash))], perr)
 		}
 	}
 	return hash, nil
 }
+
+// push sends the current work to origin — the conflict branch when one is
+// active, otherwise the default branch.
+func (e *Engine) push() error {
+	if e.conflictBranch != "" {
+		return e.Repo.PushBranch(e.conflictBranch)
+	}
+	return e.Repo.Push()
+}
+
+// ConflictBranch returns the conflict branch this engine wrote to, or "" if it
+// stayed on the default branch. Callers surface this to the user.
+func (e *Engine) ConflictBranch() string { return e.conflictBranch }
 
 // appendEvent writes an event with defaults filled in from the engine actor.
 func (e *Engine) appendEvent(ev eventlog.Event) error {

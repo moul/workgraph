@@ -115,6 +115,27 @@ func (r *Repo) CheckoutNewBranch(name string) error {
 	return err
 }
 
+// Checkout switches to an existing branch.
+func (r *Repo) Checkout(name string) error {
+	_, err := r.git("checkout", name)
+	return err
+}
+
+// EnsureBranch checks out an existing branch or creates it if missing, then
+// returns to it. It is idempotent.
+func (r *Repo) EnsureBranch(name string) error {
+	if _, err := r.git("rev-parse", "--verify", "--quiet", "refs/heads/"+name); err == nil {
+		return r.Checkout(name)
+	}
+	return r.CheckoutNewBranch(name)
+}
+
+// PushBranch pushes a specific branch to origin, setting upstream.
+func (r *Repo) PushBranch(name string) error {
+	_, err := r.git("push", "--set-upstream", "origin", name)
+	return err
+}
+
 // FastForward attempts to fast-forward the current branch to its upstream.
 func (r *Repo) FastForward() error {
 	_, err := r.git("merge", "--ff-only", "@{upstream}")

@@ -121,6 +121,7 @@ func runImport(o *globalOpts, projectRef string, specs []core.ImportSpec) error 
 	if err != nil {
 		return err
 	}
+	defer noteConflict(e)
 	// Resolve project reference to an id for all specs.
 	if projectRef != "" {
 		g, err := e.WS.Load()

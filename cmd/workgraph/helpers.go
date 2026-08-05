@@ -131,6 +131,14 @@ func parseFlags(fs *flag.FlagSet, args []string) error {
 	return fs.Parse(append(flags, positional...))
 }
 
+// noteConflict prints a notice when the engine wrote to a conflict branch
+// instead of the default branch, so the divergence is never silent.
+func noteConflict(e *core.Engine) {
+	if b := e.ConflictBranch(); b != "" {
+		fmt.Fprintf(os.Stderr, "note: control branch had diverged; changes written to conflict branch %q — reconcile before marking work done\n", b)
+	}
+}
+
 // printJSON writes v as indented JSON to stdout.
 func printJSON(v any) error {
 	enc := json.NewEncoder(os.Stdout)
