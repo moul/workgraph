@@ -77,8 +77,10 @@ func (e *Engine) CreateRun(itemRef, worker, agent, targetRepoPath string) (*RunR
 		TargetRepo:    it.TargetRepo,
 		TargetRef:     orElse(it.TargetRef, "main"),
 		TargetPath:    it.TargetPath,
-		FinishCommand: fmt.Sprintf("workgraph finish %s --status review --summary .workgraph/runs/%s/RESULT.md", runID, runID),
-		BlockCommand:  fmt.Sprintf("workgraph block %s --reason \"...\"", runID),
+		// Embed the control-repo path with -C so the commands are copy-paste
+		// runnable from inside the target repo, where the worker actually is.
+		FinishCommand: fmt.Sprintf("workgraph -C %s finish %s --status review --summary .workgraph/runs/%s/RESULT.md", e.WS.Root, runID, runID),
+		BlockCommand:  fmt.Sprintf("workgraph -C %s block %s --reason \"...\"", e.WS.Root, runID),
 	}
 
 	// Claim the item.
