@@ -12,11 +12,21 @@ import (
 	"github.com/moul/workgraph/internal/index"
 )
 
+// jsonArray marshals v, coercing a nil slice's "null" to "[]" so the embedded
+// client script can always treat the value as an array (ATT.length etc.).
+func jsonArray(v any) []byte {
+	b, _ := json.Marshal(v)
+	if string(b) == "null" {
+		return []byte("[]")
+	}
+	return b
+}
+
 // Render produces the dashboard HTML from a built index.
 func Render(res *index.Result) string {
-	objs, _ := json.Marshal(res.Objects)
-	att, _ := json.Marshal(res.Attention)
-	runs, _ := json.Marshal(res.Runs)
+	objs := jsonArray(res.Objects)
+	att := jsonArray(res.Attention)
+	runs := jsonArray(res.Runs)
 
 	var b strings.Builder
 	b.WriteString(`<!doctype html><html lang="en"><head><meta charset="utf-8">`)
