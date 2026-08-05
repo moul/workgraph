@@ -87,6 +87,7 @@ func commands() []command {
 		{"history", "show an item's work-round history", cmdHistory},
 		{"timeline", "show the recent activity feed", cmdTimeline},
 		{"ontology", "show or audit the ontology manifest", cmdOntology},
+		{"migrate", "plan or apply schema migrations", cmdMigrate},
 		{"health", "show suggested, explainable project health", cmdHealth},
 		{"ui", "generate or serve a read-only UI from the indexes", cmdUI},
 		{"serve", "run the HTTP + MCP gateway", cmdServe},
