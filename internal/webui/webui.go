@@ -27,6 +27,7 @@ func Render(res *index.Result) string {
 	objs := jsonArray(res.Objects)
 	att := jsonArray(res.Attention)
 	runs := jsonArray(res.Runs)
+	health := jsonArray(res.Health)
 
 	var b strings.Builder
 	b.WriteString(`<!doctype html><html lang="en"><head><meta charset="utf-8">`)
@@ -44,7 +45,7 @@ func Render(res *index.Result) string {
 	b.WriteString(`<section id="runs-section"><h2>Recent runs</h2><table id="runs"><thead><tr><th>run</th><th>round</th><th>worker</th><th>status</th><th>result</th></tr></thead><tbody></tbody></table></section>`)
 	b.WriteString(`</main>`)
 	b.WriteString(`<footer>Read-only projection of <code>indexes/*.jsonl</code>. The Markdown files are the source of truth.</footer>`)
-	fmt.Fprintf(&b, `<script>const OBJS=%s,ATT=%s,RUNS=%s;`, objs, att, runs)
+	fmt.Fprintf(&b, `<script>const OBJS=%s,ATT=%s,RUNS=%s,HEALTH=%s;`, objs, att, runs, health)
 	b.WriteString(uiScript)
 	b.WriteString(`</script></body></html>`)
 	return b.String()
@@ -80,6 +81,8 @@ tbody tr:last-child td{border-bottom:0}
 .st-blocked{background:#fdeaea;color:#c22}.st-review{background:#fdf4e3;color:#b7791f}
 .st-done{background:#eef0f2;color:#556}.st-triage,.st-inbox{background:#f1f0ee;color:#777}
 .st-active{background:#e7f6ec;color:#0a7d33}
+.hp-on_track{background:#e7f6ec;color:#0a7d33}.hp-at_risk{background:#fdf4e3;color:#b7791f}
+.hp-blocked{background:#fdeaea;color:#c22}.hp-unknown{background:#f1f0ee;color:#777}
 @media(prefers-color-scheme:dark){.pill{background:#232833!important;color:var(--fg)!important}}
 small{color:var(--muted)}
 footer{max-width:64rem;margin:1rem auto 3rem;padding:0 1.25rem;color:var(--muted);font-size:.8rem}
@@ -101,7 +104,9 @@ function renderAttn(){document.getElementById('attn-count').textContent=ATT.leng
  const el=document.getElementById('attn');
  if(!ATT.length){document.getElementById('attn-section').style.display='none';return}
  el.innerHTML=ATT.map(a=>'<div class="card sev-'+esc(a.severity)+'"><div class="t">'+esc(a.reason.replace(/_/g,' '))+'</div><div class="s">'+esc(a.summary)+'<br><code>'+esc(a.id)+'</code></div></div>').join('')}
-function renderProjects(){document.getElementById('projects').innerHTML=projects.length?projects.map(p=>'<div class="card"><div class="t">'+esc(p.title)+' '+pill(p.status)+'</div><div class="s">'+esc(p.summary||'')+'<br>'+esc(short(p.target_repo))+'</div></div>').join(''):'<div class="s">No projects yet.</div>'}
+const healthBy={};(HEALTH||[]).forEach(h=>healthBy[h.project]=h);
+function hpill(id){const h=healthBy[id];if(!h)return '';const s=h.suggested_health;const why=(h.reasons||[]).join('; ');return '<span class="pill hp-'+esc(s)+'" title="'+esc(why)+'">'+esc(s.replace(/_/g,' '))+'</span>'}
+function renderProjects(){document.getElementById('projects').innerHTML=projects.length?projects.map(p=>'<div class="card"><div class="t">'+esc(p.title)+' '+pill(p.status)+' '+hpill(p.id)+'</div><div class="s">'+esc(p.summary||'')+'<br>'+esc(short(p.target_repo))+'</div></div>').join(''):'<div class="s">No projects yet.</div>'}
 function renderItems(){const q=document.getElementById('q').value.toLowerCase(),st=document.getElementById('status').value,ty=document.getElementById('ty').value;
  const rows=items.filter(o=>(!st||o.status===st)&&(!ty||o.kind===ty)&&(!q||JSON.stringify(o).toLowerCase().includes(q)));
  document.querySelector('#objs tbody').innerHTML=rows.map(o=>'<tr><td>'+pill(o.status)+'</td><td>'+esc(o.title)+(o.summary?'<br><small>'+esc(o.summary)+'</small>':'')+'</td><td>'+esc(o.priority||'')+'</td><td>'+esc(sw(o.owner))+'</td><td>'+esc(short(o.target_repo))+'</td></tr>').join('')||'<tr><td colspan=5><small>No matching items.</small></td></tr>'}

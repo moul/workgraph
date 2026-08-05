@@ -85,6 +85,10 @@ type Result struct {
 	Links     []LinkLine
 	Runs      []RunLine
 	Attention []AttentionLine
+	// Health is a time-dependent suggestion; it is returned in-memory for the
+	// UI/API but never written to a committed index (that would make the
+	// committed files non-deterministic).
+	Health []HealthLine
 }
 
 // Build loads the workspace graph and events, computes all indexes, and (when
@@ -103,6 +107,7 @@ func Build(w *store.Workspace, write bool) (*Result, error) {
 	res.Links = buildLinks(g)
 	res.Runs = buildRuns(g, evs)
 	res.Attention = buildAttention(g, evs, time.Now())
+	res.Health = Health(g, time.Now())
 
 	if write {
 		dir := filepath.Join(w.Root, Dir)
