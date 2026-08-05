@@ -35,6 +35,7 @@ func render(res *index.Result, writeable bool) string {
 	att := jsonArray(res.Attention)
 	runs := jsonArray(res.Runs)
 	health := jsonArray(res.Health)
+	timeline := jsonArray(res.Timeline)
 
 	actionsHead := ""
 	footer := "Read-only projection of <code>indexes/*.jsonl</code>. The Markdown files are the source of truth."
@@ -58,9 +59,10 @@ func render(res *index.Result, writeable bool) string {
 	b.WriteString(`<input id="q" placeholder="filter…"><select id="status"><option value="">status: all</option></select><select id="ty"><option value="">type: all</option></select></div></div>`)
 	fmt.Fprintf(&b, `<table id="objs"><thead><tr><th data-k="status">status</th><th data-k="title">title</th><th data-k="priority">priority</th><th data-k="owner">owner</th><th data-k="target_repo">target</th>%s</tr></thead><tbody></tbody></table></section>`, actionsHead)
 	b.WriteString(`<section id="runs-section"><h2>Recent runs</h2><table id="runs"><thead><tr><th>run</th><th>round</th><th>worker</th><th>status</th><th>result</th></tr></thead><tbody></tbody></table></section>`)
+	b.WriteString(`<section id="tl-section"><h2>Timeline</h2><table id="tl"><thead><tr><th>when</th><th>actor</th><th>action</th><th>object</th><th>detail</th></tr></thead><tbody></tbody></table></section>`)
 	b.WriteString(`</main>`)
 	fmt.Fprintf(&b, `<footer>%s</footer>`, footer)
-	fmt.Fprintf(&b, `<script>const OBJS=%s,ATT=%s,RUNS=%s,HEALTH=%s,WRITEABLE=%t;`, objs, att, runs, health, writeable)
+	fmt.Fprintf(&b, `<script>const OBJS=%s,ATT=%s,RUNS=%s,HEALTH=%s,TL=%s,WRITEABLE=%t;`, objs, att, runs, health, timeline, writeable)
 	b.WriteString(uiScript)
 	b.WriteString(`</script></body></html>`)
 	return b.String()
@@ -143,7 +145,11 @@ async function wgSetStatus(sel){const id=sel.dataset.id,status=sel.value,version
 function renderRuns(){const el=document.querySelector('#runs tbody');const rs=(RUNS||[]).slice().reverse();
  if(!rs.length){document.getElementById('runs-section').style.display='none';return}
  el.innerHTML=rs.map(r=>'<tr><td><code>'+esc(r.run)+'</code></td><td>'+(r.round||'')+'</td><td>'+esc(sw(r.worker))+'</td><td>'+pill(r.status||'')+'</td><td><small>'+esc(r.summary||'')+'</small></td></tr>').join('')}
+function tldetail(r){let p=[];if(r.from||r.to)p.push((r.from||'∅')+'→'+(r.to||'∅'));if(r.status)p.push('['+r.status+']');if(r.message)p.push(r.message);return esc(p.join(' '))}
+function renderTL(){const el=document.querySelector('#tl tbody');const rs=(TL||[]);
+ if(!rs.length){document.getElementById('tl-section').style.display='none';return}
+ el.innerHTML=rs.map(r=>'<tr><td><small>'+esc((r.at||'').slice(0,16).replace('T',' '))+'</small></td><td>'+esc(sw(r.actor))+'</td><td><small>'+esc(r.action)+'</small></td><td><small>'+esc(r.object||'')+'</small></td><td><small>'+tldetail(r)+'</small></td></tr>').join('')}
 ['q','status','ty'].forEach(id=>document.getElementById(id).addEventListener('input',renderItems));
 document.querySelectorAll('#objs th[data-k]').forEach(th=>th.addEventListener('click',()=>{const k=th.dataset.k;items.sort((a,b)=>String(a[k]||'').localeCompare(String(b[k]||'')));renderItems()}));
-stats();renderAttn();renderProjects();renderItems();renderRuns();
+stats();renderAttn();renderProjects();renderItems();renderRuns();renderTL();
 `

@@ -89,6 +89,8 @@ type Result struct {
 	// UI/API but never written to a committed index (that would make the
 	// committed files non-deterministic).
 	Health []HealthLine
+	// Timeline is the recent activity feed (newest first), in-memory only.
+	Timeline []TimelineLine
 }
 
 // Build loads the workspace graph and events, computes all indexes, and (when
@@ -108,6 +110,7 @@ func Build(w *store.Workspace, write bool) (*Result, error) {
 	res.Runs = buildRuns(g, evs)
 	res.Attention = buildAttention(g, evs, time.Now())
 	res.Health = Health(g, time.Now())
+	res.Timeline = buildTimeline(evs)
 
 	if write {
 		dir := filepath.Join(w.Root, Dir)

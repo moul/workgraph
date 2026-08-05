@@ -13,7 +13,7 @@ import (
 func TestRenderEmptyWorkspaceEmbedsArrays(t *testing.T) {
 	html := Render(&index.Result{}) // all slices nil
 
-	for _, want := range []string{"OBJS=[]", "ATT=[]", "RUNS=[]", "HEALTH=[]"} {
+	for _, want := range []string{"OBJS=[]", "ATT=[]", "RUNS=[]", "HEALTH=[]", "TL=[]"} {
 		if !strings.Contains(html, want) {
 			t.Errorf("rendered HTML missing %q", want)
 		}

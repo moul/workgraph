@@ -85,6 +85,7 @@ func commands() []command {
 		{"import", "import external items (markdown, jsonl, github)", cmdImport},
 		{"discover", "inspect a target repo for candidate sources (non-invasive)", cmdDiscover},
 		{"history", "show an item's work-round history", cmdHistory},
+		{"timeline", "show the recent activity feed", cmdTimeline},
 		{"ontology", "show or audit the ontology manifest", cmdOntology},
 		{"health", "show suggested, explainable project health", cmdHealth},
 		{"ui", "generate or serve a read-only UI from the indexes", cmdUI},
